@@ -38,6 +38,11 @@ namespace Feijuca.Auth.Application.Queries.Realm
                 await AssociateUserToTheGroupAsync(targetTenant, adminGroupId, user, cancellationToken);
             }
 
+            if (request.ReplicateRealmRequest!.ReplicationConfigurationRequest.IncludeGroupsConfig?.Include ?? false)
+            {
+                await CreateGroupsAsync(request, targetTenant, cancellationToken);
+            }
+
             var originClients = await clientRepository.GetClientsAsync(originTenant, cancellationToken);
 
             if (request.ReplicateRealmRequest.ReplicationConfigurationRequest.IncludeClients)
@@ -186,6 +191,14 @@ namespace Feijuca.Auth.Application.Queries.Realm
             }
 
             return string.Empty;
+        }
+
+        private async Task CreateGroupsAsync(ReplicateRealmCommand request, string targetTenant, CancellationToken cancellationToken)
+        {
+            foreach (var groupName in request.ReplicateRealmRequest.ReplicationConfigurationRequest.IncludeGroupsConfig.GroupNames ?? [])
+            {
+                await groupRepository.CreateAsync(groupName, targetTenant, [], cancellationToken);
+            }
         }
     }
 }
